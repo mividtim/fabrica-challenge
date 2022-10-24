@@ -23,8 +23,6 @@ asdf install
 ### Running the REST API server locally
 From the root directory of the repository, run:
 ```shell
-asdf plugin add golang
-asdf install
 go run .
 ```
 
@@ -89,6 +87,54 @@ Content-Length: 151
         5
     ],
     "status": "en-route"
+}
+```
+
+Expected output if the order is not found:
+```
+HTTP/1.1 404 Not Found
+Content-Type: application/json; charset=utf-8
+Date: Mon, 24 Oct 2022 13:57:55 GMT
+Content-Length: 93
+
+{"code":"NOT_FOUND","message":"Order with id 69ecf8c0-bf80-469a-ab56-9923a682d304 not found"}
+```
+
+Expected output if the status is not allowed:
+```
+HTTP/1.1 422 Unprocessable Entity
+Content-Type: application/json; charset=utf-8
+Date: Mon, 24 Oct 2022 14:09:12 GMT
+Content-Length: 97
+
+{"code":"UNPROCESSABLE_ENTITY","message":"Change of status from queued to closed is not allowed"}
+```
+
+#### Driver closing an order after delivery
+```shell
+curl http://localhost:8080/orders \
+    --include \
+    --header "Content-Type: application/json" \
+    --request "PUT" \
+    --data '{"orderId": "d724215a-fc96-4b56-992f-2603a8eba81c", "status": "closed"}'
+```
+
+Expected output if the order with the ID is found:
+```
+HTTP/1.1 200 OK
+Content-Type: application/json; charset=utf-8
+Date: Mon, 24 Oct 2022 14:00:44 GMT
+Content-Length: 151
+
+{
+    "id": "d724215a-fc96-4b56-992f-2603a8eba81c",
+    "userId": "A",
+    "items": [
+        1,
+        3,
+        5
+    ],
+    "status": "closed"
 }
 ```
 
