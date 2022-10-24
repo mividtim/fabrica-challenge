@@ -3,7 +3,6 @@ module tim.garthwaite.org/challenge
 go 1.19
 
 require (
-	github.com/ahmetb/go-linq v3.0.0+incompatible
 	github.com/gin-gonic/gin v1.8.1
 	github.com/google/uuid v1.3.0
 )

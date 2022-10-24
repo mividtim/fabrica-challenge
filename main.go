@@ -1,9 +1,7 @@
 package main
 
 import (
-	"errors"
 	"fmt"
-	"github.com/ahmetb/go-linq"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"log"
@@ -23,7 +21,7 @@ type orderUpdate struct {
 	Status  string `json:"status"`
 }
 
-var orders []order
+var orders = map[string]order{}
 
 func postOrder(c *gin.Context) {
 	var newOrder order
@@ -33,18 +31,8 @@ func postOrder(c *gin.Context) {
 	}
 	newOrder.Id = uuid.New().String()
 	newOrder.Status = "queued"
-	orders = append(orders, newOrder)
+	orders[newOrder.Id] = newOrder
 	c.IndentedJSON(http.StatusCreated, newOrder)
-}
-
-func getOrderById(id string) (order, error) {
-	foundOrder := linq.From(orders).FirstWithT(func(o order) bool { return o.Id == id })
-	if foundOrder == nil {
-		foundOrder = order{}
-		return order{}, errors.New(fmt.Sprintf("Order with id %s not found", id))
-	}
-	fmt.Printf("Order: %v\n", foundOrder)
-	return foundOrder.(order), nil
 }
 
 func updateOrder(c *gin.Context) {
@@ -53,13 +41,15 @@ func updateOrder(c *gin.Context) {
 		log.Printf("Error binding JSON: %v\n", err)
 		return
 	}
-	foundOrder, err := getOrderById(update.OrderId)
-	if err != nil {
+	foundOrder, orderWasFound := orders[update.OrderId]
+	if !orderWasFound {
 		c.JSON(http.StatusNotFound, gin.H{"code": "NOT_FOUND", "message": fmt.Sprintf("Order with id %s not found", update.OrderId)})
 		return
 	}
-	if foundOrder.Status == "queued" && update.Status == "en-route" {
+	if (foundOrder.Status == "queued" && update.Status == "en-route") ||
+		(foundOrder.Status == "en-route" && update.Status == "closed") {
 		foundOrder.Status = update.Status
+		orders[update.OrderId] = foundOrder
 		c.IndentedJSON(http.StatusOK, foundOrder)
 		return
 	}
